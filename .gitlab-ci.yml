@@ -1,0 +1,37 @@
+stages:
+  - build
+  - test
+
+variables:
+  DOCKER_DRIVER: overlay2
+  SPRING_DATA_MONGODB_URI: mongodb://database:27017/patients_db
+
+image: docker:24.0.5
+
+services:
+  - docker:dind
+
+before_script:
+  - docker info
+
+build:
+  stage: build
+  script:
+    - cd "PDP 3 Submission - to be graded/patient_service_pdp3"
+    - docker-compose -f docker-compose.yml build
+  artifacts:
+    paths:
+      - "PDP 3 Submission - to be graded/patient_service_pdp3/target/patient_service_pdp3-0.0.1-SNAPSHOT.jar"
+      - "PDP 3 Submission - to be graded/patient_service_pdp3/target/surefire-reports/"
+    expire_in: 1 hour
+
+test:
+  stage: test
+  script:
+    - cd "PDP 3 Submission - to be graded/patient_service_pdp3"
+    - docker-compose -f docker-compose.yml up -d database
+    - echo "Waiting for MongoDB to initialize..."
+    - sleep 10
+    - docker-compose -f docker-compose.yml run --rm test-runner
+    - docker-compose -f docker-compose.yml down
+
